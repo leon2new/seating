@@ -3,7 +3,6 @@ import excel
 
 path = 'tab.xlsx'
 my_class_list = excel.excel_import(path)
-лоаплгыв
 
 
 
