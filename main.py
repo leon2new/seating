@@ -1,114 +1,64 @@
 import random
-import excel
 
-path = 'tab.xlsx'
-my_class_list = excel.excel_import(path)
+# Чтение параметров рассадки из settings.txt
+def read_settings(file_path):
+    settings = {}
+    with open(file_path, 'r') as file:
+        for line in file:
+            key, value = line.strip().split('=')
+            settings[key] = value
+    return settings
 
+# Чтение информации о школьниках из students.txt
+def read_students(file_path):
+    students = []
+    with open(file_path, 'r') as file:
+        for line in file:
+            parts = line.strip().split(',')
+            student_id = int(parts[0])
+            student_name = parts[1]
+            student_personality = parts[2]
+            student_status = int(parts[3])
+            students.append((student_id, student_name, student_personality, student_status))
+    return students
 
+# Рассадка школьников
+def assign_seats(rows, columns, students, seating_plan_file):
+    random.shuffle(students)
+    seating_plan = [['' for _ in range(columns)] for _ in range(rows)]
 
-number_desks = [4, 5, 5]
-total_desks = sum(number_desks)
-max_dist = 2
-row_count = len(number_desks)
-max_desks = max(number_desks)
+    def is_compatible(personality1, personality2, status1, status2):
+        # Функция для проверки совместимости характеров и статусов школьников
+        return (personality1 == 'active' and personality2 == 'quiet') or \
+               (personality1 == 'quiet' and personality2 == 'active') or \
+               (status1 == 0 or status2 == 0)
 
-desks = []
+    for i in range(len(students)):
+        for j in range(i + 1, len(students)):
+            if not is_compatible(students[i][2], students[j][2], students[i][3], students[j][3]):
+                students[i], students[j] = students[j], students[i]
 
+    current_row = 0
+    current_col = 0
 
+    for student_id, student_name, _, _ in students:
+        seating_plan[current_row][current_col] = f"{student_id}: {student_name}"
+        current_col += 1
+        if current_col == columns:
+            current_col = 0
+            current_row += 1
 
+    # Запись рассадки в seating_plan.txt
+    with open(seating_plan_file, 'w') as file:
+        for row in seating_plan:
+            file.write(','.join(row) + '\n')
 
+if __name__ == "__main__":
+    settings = read_settings("settings.txt")
+    students = read_students("students.txt")
+    rows = int(settings['rows'])
+    columns = int(settings['columns'])
+    seating_plan_file = "seating_plan.txt"
 
-
-for element in number_desks:
-    i = 0
-    temp_row = []
-    while i < max_desks:
-        if i < element:
-            temp_row.append([1, 1])
-        else:
-            temp_row.append([0, 0])
-        desks.append(temp_row)
-        i +=1
-print(desks)
-
-
-
-#
-#     j = 0
-#     while j < len(number_desks):
-#         if j < number_desks[i]:
-#             temp_ordinary.append([1, 1])
-#         else:
-#             temp_ordinary.append([0, 0])
-#
-#
-#
-#
-#
-#     temp_favorite = []
-#     temp_ordinary = []
-#     j = 0
-#     while j < max_desks:
-#         if j <= (max_dist - 1):
-#             temp_favorite.append([1, 1])
-#         else:
-#             if j < number_desks[i]:
-#                 temp_ordinary.append([1, 1])
-#             else:
-#                 temp_ordinary.append([0, 0])
-#         j += 1
-#     vip_desks.append(temp_favorite)
-#     ordinary_desks.append(temp_ordinary)
-#     i += 1
-# # print(vip_desks)
-# # print(ordinary_desks)
-#
-# favorite_student = []
-# ordinary_student = []
-# favorite_girls = []
-# favorite_boys = []
-# ordinary_girls = []
-# ordinary_boys = []
-# favorite_student_coints = 0
-# ordinary_student_coints = 0
-#
-# student_coints = len(my_class_list)
-# # print(student_coints)
-# i = 0
-# while i < student_coints:
-#     if my_class_list[i][2] in [1]:
-#         favorite_student.append(my_class_list[i][:2])
-#         favorite_student_coints += 1
-#     else:
-#         ordinary_student.append(my_class_list[i][:2])
-#         ordinary_student_coints += 1
-#     i += 1
-# # print("Избранные ", favorite_student)
-# # print(favorite_student_coints)
-# # print("Обычные ", ordinary_student)
-# # print(ordinary_student_coints)
-#
-# # Разделим favorite_student список на мальчиков и девочек, Создадим функцию для этого
-# for student in favorite_student:
-#     if student[1] == 'f':
-#         favorite_girls.append(student[0])
-#     else:
-#         favorite_boys.append(student[0])
-# for student in ordinary_student:
-#     if student[1] == 'f':
-#         ordinary_girls.append(student[0])
-#     else:
-#         ordinary_boys.append(student[0])
-#
-# # начнем рассадку детей
-# # определим сколько у нас есть вип мест
-#
-# vip_place_coint: int = max_dist * 3 * 2
-# # print(vip_place_coint)
-# # print(favorite_girls)
-#
-# # Сравним количество vip детей и мест
-# vip_place_count = max_dist * 3 * 2
-#
-# random.shuffle(ordinary_boys)
-# random.shuffle(ordinary_girls)
+    assign_seats(rows, columns, students, seating_plan_file)
+    print("Рассадка завершена. Результат записан в seating_plan.txt.")
